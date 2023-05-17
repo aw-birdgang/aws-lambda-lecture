@@ -1,0 +1,90 @@
+service: jwtapp
+app: jwtapp
+provider:
+  name: aws
+  runtime: nodejs12.x
+#이 프로젝트의 Lambda 함수에서 사용할 IAM Role, 정의는 아래 DefaultRole
+  iam:
+    role: DefaultRole
+  region: ap-northeast-2
+  versionFunctions: false
+#스택 명
+  stackName: jwtapp
+#Lambda의 타임아웃 시간, 여기 설정하면 모든 Lambda에 공통 적용
+  timeout: 10
+  environment:
+    key: Yqer2yzevjftJLjl57l3F65yZkJapAZunEA2plAExOTXS+OEX/X+52Pz0P3Q/Dek77oxIRsfITansYDhshVi4HvxN1SP6OTeL+2O3eaK68xsx6yRVksJ7+vcUpLG5U6OiTKlTZklr4u8E5PJgJnS40HzUhq6523OOELW0s7sqUbNmOIPAtHAgjTQXsPrVaHlDmLEcRRY9R1xdYaIU2BOEYjcizppNf5vQyXODA==
+  deploymentBucket:
+    name: ${aws:accountId}-serverless-deploy
+    maxPreviousDeploymentArtifacts: 5
+    blockPublicAccess: true
+  deploymentPrefix: ${self:app}
+resources:
+  Resources:
+#람다를 위한 IAM Role 정의
+    DefaultRole:
+      Type: AWS::IAM::Role
+      Properties:
+        RoleName: chatapp-lambda-role
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action: sts:AssumeRole
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
+        Policies:
+          - PolicyName: myPolicyName
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - logs:*
+                    - execute-api:*
+                  Resource: '*'
+
+#Serverless 플러그인
+plugins:
+#Deploymenet 버킷 자동 생성 플러그인
+  - serverless-deployment-bucket
+#자동으로 Nested Stack 기반으로 CloudFormation을 생성해주는 플러그인 https://github.com/dougmoscrop/serverless-plugin-split-stacks
+  - serverless-plugin-split-stacks
+
+#위의 serverless-plugin-split-stacks 관련 설정
+custom:
+  splitStacks:
+    nestedStackCount: 5
+    perFunction: false
+    perType: false
+    perGroupFunction: true
+
+#람다 함수들
+functions:
+  dinoh_lambda_jwt_get:
+    name: 'dinoh_lambda_jwt_get'
+    handler: src/lambda/jwt/get.handler
+    events:
+      - http:
+          path: jwt
+          method: get
+          cors: true
+  dinoh_lambda_jwt_decode_get:
+    name: 'dinoh_lambda_jwt_decode_get'
+    handler: src/lambda/jwt/decode/get.handler
+    events:
+      - http:
+          path: jwt/decode
+          method: get
+          cors: true
+  dinoh_lambda_jwt_permission_get:
+    name: 'dinoh_lambda_jwt_permission_get'
+    handler: src/lambda/jwt/permission/get.handler
+    events:
+      - http:
+          path: jwt/permission
+          method: get
+          cors: true

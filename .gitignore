@@ -1,0 +1,11 @@
+node_modules/
+lerna-debug.log
+npm-debug.log
+packages/*/lib
+.idea
+coverage/
+tsconfig.build.tsbuildinfo
+yarn-error.log
+integration/rabbitmq/dist
+
+.serverless
